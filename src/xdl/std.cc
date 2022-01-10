@@ -10,9 +10,11 @@
 #include "util/datatype.hh"
 #include "xdl/XDLCompiler.hh"
 using namespace std;
+using namespace xdl;  // TODO: Remove using namespace and convert function
+                      // calls as needed
 
 DynArray<string> XDLType::typeNames(1024);
-DynArray<const XDLType*> XDLType::types(1024);
+DynArray<const unique_ptr<XDLType>> XDLType::types(1024);
 const string XDLType::empty = "";
 HashMap<uint32_t> XDLType::byName(1024);
 const UnImpl* XDLType::unimpl = nullptr;
@@ -30,28 +32,51 @@ void XDLType::display(Buffer& binaryIn, Buffer& asciiOut) const {}
 // this must be called before XDLType is used (class initialization of static
 // vars)
 void XDLType::classInit() {
-  addType(new U8());
-  addType(new U16());
-  addType(new U24());
-  addType(new U32());
-  addType(new U64());
-  addType(new U128());
-  addType(new U256());
-  addType(new I8());
-  addType(new I16());
-  addType(new I24());
-  addType(new I32());
-  addType(new I64());
-  addType(new I128());
-  addType(new I256());
-  addType(new F32());
-  addType(new F64());
-  addType(new Bool());
-  addType(new Date());
-  addType(new JulianDate());
-  addType(new Timestamp());
-  addType(new String8());
-  unimpl = static_cast<const UnImpl*>(addType(new UnImpl()));
+  types.emplace_back(make_unique<U8>());
+  types.emplace_back(make_unique<U16>());
+  types.emplace_back(make_unique<U24>());
+  types.emplace_back(make_unique<U32>());
+  types.emplace_back(make_unique<U64>());
+  types.emplace_back(make_unique<U128>());
+  types.emplace_back(make_unique<U256>());
+  types.emplace_back(make_unique<I8>());
+  types.emplace_back(make_unique<I16>());
+  types.emplace_back(make_unique<I24>());
+  types.emplace_back(make_unique<I32>());
+  types.emplace_back(make_unique<I64>());
+  types.emplace_back(make_unique<I128>());
+  types.emplace_back(make_unique<I256>());
+  types.emplace_back(make_unique<F32>());
+  types.emplace_back(make_unique<F64>());
+  types.emplace_back(make_unique<Bool>());
+  types.emplace_back(make_unique<Date>());
+  types.emplace_back(make_unique<JulianDate>());
+  types.emplace_back(make_unique<Timestamp>());
+  types.emplace_back(make_unique<String8>());
+  unimpl = static_cast<const UnImpl*>(
+      types.emplace_back(make_unique<UnImpl>()).get());
+  // addType(new U8());
+  // addType(new U16());
+  // addType(new U24());
+  // addType(new U32());
+  // addType(new U64());
+  // addType(new U128());
+  // addType(new U256());
+  // addType(new I8());
+  // addType(new I16());
+  // addType(new I24());
+  // addType(new I32());
+  // addType(new I64());
+  // addType(new I128());
+  // addType(new I256());
+  // addType(new F32());
+  // addType(new F64());
+  // addType(new Bool());
+  // addType(new Date());
+  // addType(new JulianDate());
+  // addType(new Timestamp());
+  // addType(new String8());
+  // unimpl = static_cast<const UnImpl*>(addType(new UnImpl()));
   //  addType(new String16());
   // addType(new String32());
   // addType(new String64());
@@ -85,14 +110,14 @@ void XDLType::classInit() {
   // BIGINT
 }
 
-void XDLType::classCleanup() {
-  for (uint32_t i = 0; i < types.size(); i++) {
-    if (types[i] != nullptr) {
-      delete types[i];
-      types[i] = nullptr;
-    }
-  }
-}
+// void XDLType::classCleanup() {
+//   for (uint32_t i = 0; i < types.size(); i++) {
+//     if (types[i] != nullptr) {
+//       delete types[i];
+//       types[i] = nullptr;
+//     }
+//   }
+// }
 
 DataType XDLRaw::getDataType() const {
   return DataType::U8;  // TODO: add this type!
@@ -149,7 +174,7 @@ void Struct::addMember(const std::string& memberName, const XDLType* type) {
 }
 
 void Struct::addBuiltin(const std::string& memberName, DataType t) {
-  addMember(memberName, types[uint32_t(t)]);
+  addMember(memberName, types[uint32_t(t)].get());
 }
 
 void Struct::addTypedef(const char name[], const char type[]) {

@@ -147,7 +147,6 @@ void GLWin::classInit() {
 // Static cleanup for libraries
 void GLWin::classCleanup() {
   Socket::classCleanup();
-  XDLType::classCleanup();
 }
 
 inline glm::vec4 uint2vec4(uint32_t color) {

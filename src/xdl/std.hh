@@ -61,7 +61,7 @@ class XDLType {
  protected:
   const static std::string empty;
   uint32_t nameOffset;
-  static DynArray<const XDLType*> types;
+  static DynArray<const unique_ptr<XDLType>> types;
   static DynArray<std::string>
       typeNames;  // the list of all unique names in the system
   static HashMap<uint32_t> byName;
@@ -84,18 +84,18 @@ class XDLType {
       byName.checkGrow();
       byName.add(typeName.c_str(), nameOffset = typeNames.size());
       typeNames.add(typeName);
-      types.add(this);
     }
   }
   XDLType(DataType t) : nameOffset(computeNameOffset(t)) {}
+  virtual ~XDLType() = default;
   virtual void writeXDL(Buffer& buf) const = 0;
-  virtual void writeXDLMeta(Buffer& buf) const = 0;
+  virtual constexpr void writeXDLMeta(Buffer& buf) const = 0;
   virtual void addData(ArrayOfBytes* data) const = 0;
   virtual void addMeta(ArrayOfBytes* meta) const = 0;
   virtual uint32_t size() const = 0;
   virtual XDLType* begin(Buffer& buf) = 0;
   static const XDLType* getBuiltinType(DataType dt) {
-    return types[uint32_t(dt)];
+    return types[uint32_t(dt)].get();
   }
 
   virtual DataType getDataType() const = 0;
@@ -928,7 +928,9 @@ class GenericList : public CompoundType {
 
  public:
   GenericList(XDLCompiler* compiler, const std::string& name, DataType t)
-      : CompoundType(name), compiler(compiler), listType(types[uint32_t(t)]) {}
+      : CompoundType(name),
+        compiler(compiler),
+        listType(types[uint32_t(t)].get()) {}
   GenericList(XDLCompiler* compiler, const std::string& name,
               const XDLType* listType)
       : CompoundType(name), compiler(compiler), listType(listType) {}
@@ -1044,7 +1046,11 @@ class Struct : public CompoundType {
 
  public:
   Struct(XDLCompiler* compiler, const std::string& name)
-      : CompoundType(name), members(16), byName(16), packedSize(0) {}
+      : CompoundType(name),
+        compiler(compiler),
+        members(16),
+        byName(16),
+        packedSize(0) {}
   Struct(XDLCompiler* c) : Struct(c, empty) {}
 
   void addSym(const string& name, const XDLType* t);
@@ -1258,6 +1264,19 @@ class ArrayOfBytes : public CompoundType {
   XDLType* begin(Buffer& buf) override { return this; }
 };
 
+// TODO: restrict T to builtin types?
+template <typename T>
+void write(Buffer& buf, T val) {
+  buf.write(val);
+}
+
+namespace xdl {
+
+template <typename T>
+concept XDLDerived = requires(T t) {
+  std::is_base_of_v<XDLType, T>;
+};
+
 /**
  * @brief Convert C++ types to XDL DataTypes
  *
@@ -1274,44 +1293,28 @@ constexpr DataType typeToDataType(int64_t) { return DataType::I64; }
 constexpr DataType typeToDataType(float) { return DataType::F32; }
 constexpr DataType typeToDataType(double) { return DataType::F64; }
 constexpr DataType typeToDataType(bool) { return DataType::BOOL; }
-
-// constexpr lengths for std::strings unimplemented as of GCC 11.1.0
-inline DataType typeToDataType(const std::string& str) {
-  int length = std::char_traits<char>::length(str.c_str());
-  if (length <= UINT8_MAX)
-    return DataType::STRING8;
-  else if (length <= UINT16_MAX)
-    return DataType::STRING16;
-  else if (length <= UINT32_MAX)
-    return DataType::STRING32;
-  else
-    return DataType::STRING64;
+constexpr DataType typeToDataType(const std::string_view& str) {
+  uint32_t length = str.size();
+  if (length <= UINT8_MAX) return DataType::STRING8;
+  if (length <= UINT16_MAX) return DataType::STRING16;
+  if (length <= UINT32_MAX) return DataType::STRING32;
+  return DataType::STRING64;
 }
 
-constexpr DataType typeToDataType(const char* str) {
-  int length = std::char_traits<char>::length(str);
-  if (length <= UINT8_MAX)
-    return DataType::STRING8;
-  else if (length <= UINT16_MAX)
-    return DataType::STRING16;
-  else if (length <= UINT32_MAX)
-    return DataType::STRING32;
-  else
-    return DataType::STRING64;
+constexpr DataType typeToDataType(const auto& arg) { return DataType::UNIMPL; }
+
+// TODO: mapnames needs to be converted to a HashMap, HashMap needs to be made
+// constexpr
+constexpr DataType typeToDataType(const XDLDerived auto& d) {
+  return *(mapnames.get(d.getTypeName().c_str()));
 }
 
-template <typename T>
-constexpr DataType typeToDataType(T arg) {
-  return DataType::UNIMPL;
+/*
+inline void writeMeta(Buffer& buf, const auto& data) {
+  buf.write(typeToDataType(data));
 }
-
-// TODO: restrict T to builtin types?
-template <typename T>
-void write(Buffer& buf, T val) {
-  buf.write(val);
-}
-// void writeMeta(Buffer& buf, uint32_t) { buf.write(DataType::U32); }
-// void writeMeta(Buffer& buf, uint8_t) { buf.write(DataType::U32); }
+*/
+};  // namespace XDL
 
 inline void writeMeta(Buffer& buf, const U8&) { buf.write(DataType::U8); }
 inline void writeMeta(Buffer& buf, const U16&) { buf.write(DataType::U16); }

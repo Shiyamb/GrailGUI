@@ -2,6 +2,7 @@
 
 #include "xdl/std.hh"
 
+using namespace xdl;
 /**
  * @brief A templated list of XDL Types
  *
