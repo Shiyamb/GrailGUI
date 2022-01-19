@@ -1,5 +1,5 @@
 #include <iostream>
-#include "datatype.hh"
+#include "datatype1.hh"
 using namespace std;
 
 void buildSampleData(DataType t, char* dest, const char* src) {

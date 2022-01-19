@@ -1,6 +1,6 @@
 #include "xdl/XDLCompiler.hh"
 
-#include "util/datatype.hh"
+#include "util/datatype1.hh"
 
 using namespace std;
 

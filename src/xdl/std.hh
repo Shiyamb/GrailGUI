@@ -23,7 +23,7 @@
 #include "util/Buffer.hh"
 #include "util/DynArray.hh"
 #include "util/HashMap.hh"
-#include "util/datatype.hh"
+#include "util/datatype1.hh"
 
 /*
  */
@@ -1305,7 +1305,7 @@ constexpr DataType typeToDataType(const auto& arg) { return DataType::UNIMPL; }
 
 // TODO: mapnames needs to be converted to a HashMap, HashMap needs to be made
 // constexpr
-constexpr DataType typeToDataType(const XDLDerived auto& d) {
+DataType typeToDataType(const XDLDerived auto& d) {
   return *(mapnames.get(d.getTypeName().c_str()));
 }
 
@@ -1352,5 +1352,5 @@ inline void writeMeta(Buffer& buf, const JulianDate&) {
 
 template <typename T>
 void writeMeta(Buffer& buf, const T& data) {
-  buf.write(typeToDataType(data));
+  buf.write(xdl::typeToDataType(data));
 }

@@ -16,7 +16,7 @@
 #include "csp/csp.hh"
 #include "csp/cspservlet/Student.hh"
 #include "util/List1.hh"
-#include "util/datatype.hh"
+#include "util/datatype1.hh"
 
 class XDLRaw;
 

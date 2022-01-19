@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string.h>
 #include <vector>
-#include "util/datatype.hh"
+#include "util/datatype1.hh"
 #include "csp/Insertion.hh"
 #include <fstream>
 

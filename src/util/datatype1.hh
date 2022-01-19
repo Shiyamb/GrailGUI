@@ -5,7 +5,7 @@
 
 #include <cstdint>
 #include <iostream>
-#include <unordered_map>
+#include <util/HashMap.hh>
 #include <vector>
 
 /*
@@ -81,14 +81,91 @@ enum class DataType {
   ERR,  //Wrapper for error propogation
   SOME,  //Wrapper for optional or result values
   NONE,  //Empty container (null without the pointers)
-  OPTIONAL,  //Contains either Some(T) or None
-  RESULT,  //Contains either Ok(T) or Err(E)
+  OPTIONAL_T,  //Contains either Some(T) or None
+  RESULT_T,  //Contains either Ok(T) or Err(E)
   TYPEDEF,  //allows aliasing of XDL types
   UNIMPL,  //allows error handling for unimplemented types or functionality
   ENUM_SIZE,  //sentinel for running over the enum length
 };
 
+constexpr const char* DataTypeNames[] = {
+    "u8",
+    "u16",
+    "u24",
+    "u32",
+    "u64",
+    "u128",
+    "u256",
+    "i8",
+    "i16",
+    "i24",
+    "i32",
+    "i64",
+    "i128",
+    "i256",
+    "f32",
+    "f64",
+    "bool",
+    "date",
+    "juldate",
+    "timestamp",
+    "string8",
+    "string16",
+    "string32",
+    "string64",
+    "utf8_8",
+    "utf8_16",
+    "utf8_32",
+    "utf8_64",
+    "utf16_8",
+    "utf16_16",
+    "utf16_32",
+    "utf16_64",
+    "regex",
+    "list8",
+    "list16",
+    "list32",
+    "list64",
+    "struct8",
+    "struct16",
+    "struct32",
+    "dynamiclist8",
+    "dynamiclist16",
+    "func8",
+    "func16",
+    "funcparam8",
+    "funcparam16",
+    "loop1",
+    "loop2",
+    "loop4",
+    "bitvec8",
+    "bitvec16",
+    "bitvec32",
+    "bitvec64",
+    "bitvec32_int",
+    "bitvec64_int",
+    "bitfields",
+    "arithmetic",
+    "jpeg",
+    "jpeglist",
+    "blob16",
+    "blob32",
+    "blob64",
+    "bigint",
+    "ok",
+    "error",
+    "some",
+    "none",
+    "optional<T>",
+    "result<T,E>",
+    "typedef",
+    "unimplemented",
+    "enum_size does not really exist",
+};
 
-extern const char* DataTypeNames[];
-extern std::unordered_map<std::string, DataType> mapnames;
-extern void loadmap();
+HashMap<DataType> mapnames(int(DataType::ENUM_SIZE));
+
+constexpr void loadmap(){
+  for (int i = 0; i < int(DataType::ENUM_SIZE); i++)
+    mapnames.add(DataTypeNames[i], (DataType)i);
+}

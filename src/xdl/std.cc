@@ -7,7 +7,7 @@
 #include "opengl/StyledMultiShape2D.hh"
 #include "util/Buffer.hh"
 #include "util/Ex.hh"
-#include "util/datatype.hh"
+#include "util/datatype1.hh"
 #include "xdl/XDLCompiler.hh"
 using namespace std;
 using namespace xdl;  // TODO: Remove using namespace and convert function

@@ -6,7 +6,7 @@
 #include "xdl/std.hh"
 #include "util/HashMap.hh"
 #include "util/DynArray.hh"
-#include "util/datatype.hh"
+#include "util/datatype1.hh"
 #include "util/Buffer.hh"
 
 class Quote : public XDLType {

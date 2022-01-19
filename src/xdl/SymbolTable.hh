@@ -5,7 +5,7 @@
 #include "util/Buffer.hh"
 #include "util/DynArray.hh"
 #include "util/Ex.hh"
-#include "util/datatype.hh"
+#include "util/datatype1.hh"
 #include "xdl/std.hh"
 
 class XDLCompiler;
