@@ -11,38 +11,38 @@ class HashMapBase {
   constexpr static int r1 = 5, r2 = 7, r3 = 17, r4 = 13, r5 = 11,
                        r6 = 16;  // rotate values
 
-  static bool hasNoZero(uint32_t v) {
+  constexpr static bool hasNoZero(uint32_t v) {
     return (v & 0xff) && (v & 0xff00) && (v & 0xff0000) && (v & 0xff000000);
   }
-  static bool hasNoZero(uint64_t v) {
+  constexpr static bool hasNoZero(uint64_t v) {
     return hasNoZero(uint32_t(v >> 32)) && hasNoZero(uint32_t(v));
   }
 
-  static bool haszero(uint32_t v) {
+  constexpr static bool haszero(uint32_t v) {
     constexpr uint32_t MASK = 0x7F7F7F7FU;
     return ~(((v & MASK) + MASK) | v) | MASK;
   }
-  static bool notzero(uint64_t v) {
+  constexpr static bool notzero(uint64_t v) {
     constexpr uint64_t MASK = 0x7F7F7F7F7F7F7F7FULL;
     return ~(((v & MASK) + MASK) | v) | MASK;
   }
 
-  uint32_t fasthash1(const char s[]) const;
-  uint32_t bytewisehash(const char s[], uint32_t len) const;
-  uint32_t bytewisehash(const char s[]) const;
-  uint32_t hash(const char s[]) const { return bytewisehash(s); }
-  uint32_t hash(const char s[], uint32_t len) const {
+  constexpr uint32_t fasthash1(const char s[]) const;
+  constexpr uint32_t bytewisehash(const char s[], uint32_t len) const;
+  constexpr uint32_t bytewisehash(const char s[]) const;
+  constexpr uint32_t hash(const char s[]) const { return bytewisehash(s); }
+  constexpr uint32_t hash(const char s[], uint32_t len) const {
     return bytewisehash(s, len);
   }
-  HashMapBase(uint32_t sz, uint32_t symbolSize)
-      : size(sz), symbolSize(symbolSize), table(new uint32_t[sz]) {
-    size--;
-    symbols = new char[symbolSize];
-  }
+  constexpr HashMapBase(uint32_t sz, uint32_t symbolSize)
+      : size(sz - 1),
+        symbolSize(symbolSize),
+        table(new uint32_t[sz]),
+        symbols(new char[symbolSize]) {}
 
  public:
-  const char* getWords() const { return symbols; }
-  uint32_t getWordsSize() const { return current - symbols; }
+  constexpr const char* getWords() const { return symbols; }
+  constexpr uint32_t getWordsSize() const { return current - symbols; }
 };
 
 template <typename Val>
@@ -52,9 +52,9 @@ class HashMap : public HashMapBase {
     uint32_t offset;
     uint32_t next;  // relative pointer (offset into nodes)
     Val val;
-    Node() {
+    constexpr Node() {
     }  // this is so the empty block can be initialized without doing anything
-    Node(uint32_t offset, uint32_t next, Val v)
+    constexpr Node(uint32_t offset, uint32_t next, Val v)
         : offset(offset), next(next), val(v) {}
   };
   uint32_t nodeSize;   // how many nodes are preallocated
@@ -62,7 +62,7 @@ class HashMap : public HashMapBase {
   Node* nodes;
 
  public:
-  HashMap(uint32_t sz, uint32_t symbolSize = 1024 * 1024)
+  constexpr HashMap(uint32_t sz, uint32_t symbolSize = 1024 * 1024)
       : HashMapBase(sz, symbolSize),
         nodeSize(sz / 2 + 2),
         nodes(new Node[sz / 2 + 2]) {
@@ -72,15 +72,15 @@ class HashMap : public HashMapBase {
     for (uint32_t i = 0; i <= size; i++)
       table[i] = 0;  // 0 means empty, at the moment the first node is unused
   }
-  ~HashMap() {
+  constexpr ~HashMap() {
     delete[] nodes;
     delete[] symbols;
     delete[] table;
   }
-  HashMap(const HashMap& orig) = delete;
-  HashMap& operator=(const HashMap& orig) = delete;
+  constexpr HashMap(const HashMap& orig) = delete;
+  constexpr HashMap& operator=(const HashMap& orig) = delete;
 
-  void checkGrow() {
+  constexpr void checkGrow() {
     if (nodeCount * 2 <= size) return;
     const Node* old = nodes;
     nodes = new Node[nodeSize * 2];  // TODO: need placement new
@@ -108,7 +108,7 @@ class HashMap : public HashMapBase {
     std::cerr << "HashMap growing size=" << size << " " << nodeSize << '\n';
   }
 
-  void add(const char s[], const Val& v) {
+  constexpr void add(const char s[], const Val& v) {
     uint32_t index = hash(s);
     for (uint32_t p = table[index]; p != 0; p = nodes[p].next) {
       const char* w = symbols + nodes[p].offset;
@@ -128,7 +128,7 @@ class HashMap : public HashMapBase {
     current += i + 1;
     nodeCount++;
   }
-  Val add(const char s[], uint32_t len, const Val& v) {
+  constexpr Val add(const char s[], uint32_t len, const Val& v) {
     uint32_t index = hash(s, len);
     for (uint32_t p = table[index]; p != 0; p = nodes[p].next) {
       const char* w = symbols + nodes[p].offset;
@@ -149,7 +149,7 @@ class HashMap : public HashMapBase {
     return v;
   }
 
-  bool get(const char s[], Val* v) const {
+  constexpr bool get(const char s[], Val* v) const {
     uint32_t index = hash(s);
     for (uint32_t p = table[index]; p != 0; p = nodes[p].next) {
       const char* w = symbols + nodes[p].offset;
@@ -162,7 +162,7 @@ class HashMap : public HashMapBase {
     return false;
   }
 
-  Val* get(const char s[]) {
+  constexpr Val* get(const char s[]) {
     uint32_t index = hash(s);
     for (uint32_t p = table[index]; p != 0; p = nodes[p].next) {
       const char* w = symbols + nodes[p].offset;
@@ -174,7 +174,7 @@ class HashMap : public HashMapBase {
     return nullptr;
   }
 
-  const Val* get(const char s[]) const {
+  constexpr const Val* get(const char s[]) const {
     uint32_t index = hash(s);
     for (uint32_t p = table[index]; p != 0; p = nodes[p].next) {
       const char* w = symbols + nodes[p].offset;
@@ -186,7 +186,7 @@ class HashMap : public HashMapBase {
     return nullptr;
   }
 
-  Val* get(const char* s, uint32_t len) {
+  constexpr Val* get(const char* s, uint32_t len) {
     uint32_t index = hash(s);
     for (uint32_t p = table[index]; p != 0; p = nodes[p].next) {
       const char* w = symbols + nodes[p].offset;
@@ -196,7 +196,7 @@ class HashMap : public HashMapBase {
     return nullptr;
   }
 
-  uint64_t hist() const {
+  constexpr uint64_t hist() const {
     constexpr int histsize = 20;
     int h[histsize] = {0};
     for (uint32_t i = 0; i <= size; i++) {
@@ -255,3 +255,71 @@ class HashMap : public HashMapBase {
   friend Iterator;
   friend ConstIterator;
 };
+
+constexpr uint32_t HashMapBase::bytewisehash(const char s[]) const {
+  uint32_t i;
+  uint32_t sum = s[0] ^ 0x56F392AC;
+  for (i = 1; s[i] != '\0'; i++) {
+    sum = (((sum << r1) | (sum >> (32 - r1))) ^
+           ((sum >> r2) | (sum >> (32 - r2)))) +
+          s[i];
+    sum = (((sum << r3) | (sum >> (32 - r3))) ^
+           ((sum >> r4) | (sum >> (32 - r4)))) +
+          s[i];
+  }
+  sum = ((sum << r5) | (sum >> (32 - r5))) ^ sum ^ (i << 7);
+  //  sum = (((sum << r5) | (sum >> (32-r5))) ^ ((sum << r6) | (sum >>
+  //  (32-r6)))) + s[i];
+  return sum & size;
+}
+
+// do not call with len = 0, or die.
+constexpr uint32_t HashMapBase::bytewisehash(const char s[],
+                                             uint32_t len) const {
+  uint32_t i;
+  uint32_t sum = s[0] ^ 0x56F392AC;
+  for (i = 1; i < len; i++) {
+    sum = (((sum << r1) | (sum >> (32 - r1))) ^
+           ((sum >> r2) | (sum >> (32 - r2)))) +
+          s[i];
+    sum = (((sum << r3) | (sum >> (32 - r3))) ^
+           ((sum >> r4) | (sum >> (32 - r4)))) +
+          s[i];
+  }
+  sum = ((sum << r5) | (sum >> (32 - r5))) ^ sum ^ (i << 7);
+  //  sum = (((sum << r5) | (sum >> (32-r5))) ^ ((sum << r6) | (sum >>
+  //  (32-r6)))) + s[i];
+  return sum & size;
+}
+
+constexpr uint32_t HashMapBase::fasthash1(const char s[]) const {
+  uint64_t* p = (uint64_t*)s;
+  uint64_t v;
+  uint64_t sum = 0xF39A5EB6;
+
+  // https://graphics.stanford.edu/~seander/bithacks.html#ZeroInWord
+  while (v = *p++, hasNoZero(v)) {
+    // rotate might be better, preserve more bits in each operation
+    sum = sum ^ v ^ (v << 12);
+    sum = (sum << 3) ^ (sum >> 5);
+    sum = (sum << 7) ^ (sum >> 13);
+    sum = (sum >> 17) ^ (sum << 23);
+  }
+  // do the last chunk which is somewhere less than 8 bytes
+  // this is for little-endian CPUs like intel, from bottom byte to the right
+  uint64_t wipe = 0xFF;
+  uint64_t M = 0xFFULL;
+  for (int i = 8; i > 0; i--) {
+    if ((v & M) == 0) {
+      v &= wipe;
+      break;
+    }
+    M <<= 8;
+    wipe = (wipe << 8) | 0xFF;
+  }
+  sum = sum ^ v ^ (sum >> 3);
+  sum = (sum >> 7) ^ (sum << 9);
+  sum = (sum >> 13) ^ (sum << 17);
+  sum = (sum >> 31) ^ (sum >> 45);
+  return sum & size;
+}
